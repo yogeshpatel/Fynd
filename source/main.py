@@ -127,6 +127,7 @@ if __name__ == "__main__":
 # hf_token = os.getenv("HF_TOKEN_KEY")
 # cach_dir = "/media/yogesh/2TM_m2/llm_model"
 
+# HI Test
 # hf_embedding = HuggingFaceEmbeddings(
 #     model_name="sentence-transformers/all-MiniLM-L6-v2"
 # )
