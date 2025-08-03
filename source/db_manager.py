@@ -6,7 +6,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
+import json
 
 class DBManager:
 
@@ -21,6 +21,16 @@ class DBManager:
             model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
 
+        # Check if db_path exists and required FAISS files are present
+        if os.path.exists(self.db_path):
+            faiss_file = os.path.join(self.db_path, "index.faiss")
+            pkl_file = os.path.join(self.db_path, "index.pkl")
+            if os.path.exists(faiss_file) and os.path.exists(pkl_file):
+                try:
+                    self.vector_store = FAISS.load_local(self.db_path, embeddings=self.hf_embeddings,allow_dangerous_deserialization=True)
+                except Exception as e:
+                    print(f"Failed to load FAISS vector store: {e}")
+
     def check_if_file_updated(self,file_path, md5_hash):
     # Check if the file has been updated by comparing its MD5 hash with the existing one
         existing_md5_hash = self.get_existing_md5_hash(file_path)
@@ -33,6 +43,7 @@ class DBManager:
             vector_store = FAISS.load_local(_db_path, embeddings=self.hf_embeddings)
             document = vector_store.get_document_by_id(file_path)
             return document.md5_hash
+        return None
 
     def get_md5_hash(self, file_path):
     # Calculate MD5 hash of the file
@@ -72,6 +83,11 @@ class DBManager:
         self.vector_store = FAISS.from_documents(all_documents, embedding=self.hf_embeddings)
 
         return None
+
+    def save_document(self):
+        if self.vector_store is not None:
+            if os.path.exists(self.db_path):
+                self.vector_store.save_local(self.db_path)
 
     def query_document(self, query_string: str ):
         return self.vector_store.similarity_search(query_string)

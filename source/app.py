@@ -21,6 +21,7 @@ db_manager = None
 async def lifespan(app: FastAPI):
     db_manager = DBManager(data_path, db_path, 1000, 200)
     db_manager.load_documents()
+    db_manager.save_document()
     app.state.db_manager = db_manager
     print("db manager loaded")
     yield
