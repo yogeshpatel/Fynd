@@ -1,13 +1,18 @@
 import hashlib
 import os
 
+from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import json
+from langchain_openai import ChatOpenAI
+from langchain.chains import create_retrieval_chain
 
+open_ai_key = "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"
 class DBManager:
 
     def __init__(self, folder_path, db_path ,chunk_size , chunk_overlap):
@@ -97,21 +102,24 @@ class DBManager:
             if os.path.exists(self.db_path):
                 self.vector_store.save_local(self.db_path)
 
-    def query_document(self, query_string: str ):
-        return self.vector_store.similarity_search(query_string)
+    def query_document(self, query_string: str , call_llm=True):
 
+        if call_llm:
+            llm = ChatOpenAI(openai_api_key=open_ai_key)
+            retriever = self.vector_store.as_retriever()
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", "Answer using the given context."),
+                ("human", "Context:\n{context}\n\nQuestion: {input}")
+            ])
+            # chain = create_retrieval_chain(llm, retriever)
+            # answer = chain.invoke({"input": query_string})
 
+            combine_chain = create_stuff_documents_chain(llm, prompt)
+            retrieval_chain = create_retrieval_chain(retriever=retriever,
+                                                     combine_docs_chain=combine_chain)
 
+            response = retrieval_chain.invoke({"input": query_string})
 
-
-
-        # for root, _, files in os.walk(self.folder_path):
-        #     for file in files:
-        #         file_path = os.path.join(root, file)
-        #         if file_path.endswith('.pdf'):
-        #             md5_hash = self.get_md5_hash(file_path)
-        #             if not self.check_if_file_updated(file_path, md5_hash):
-        #                 updated_files.append(file_path)
-
-        #     if updated_files:
-        #         for file_path in updated_files:
+            return response
+        else:
+            result = self.vector_store.similarity_search(query_string)
