@@ -5,14 +5,14 @@ from source.db_manager import DBManager
 
 if __name__ == "__main__":
     # /Introduction_to_Python_Programming_WEB.pdf
-    data_path = "/media/Yogesh/DATA_2TB_M2/llm_db/rag_raw_data"
-    db_path = "/media/Yogesh/DATA_2TB_M2/llm_db/vector_db"
-
-
-    # Your main application logic here
-    print("RAG-based application started.")
-    manager = DBManager(data_path, db_path, 500, 50)
-    manager.load_documents()
+    # data_path = "/media/Yogesh/DATA_2TB_M2/llm_db/rag_raw_data"
+    # db_path = "/media/Yogesh/DATA_2TB_M2/llm_db/vector_db"
+    #
+    #
+    # # Your main application logic here
+    # print("RAG-based application started.")
+    # manager = DBManager(data_path, db_path, 500, 50)
+    # manager.load_documents()
 
 
         
