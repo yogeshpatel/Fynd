@@ -16,6 +16,12 @@ class DBManager:
         self.chunk_overlap = chunk_overlap
         self.folder_path = folder_path
         self.db_path = db_path
+        self.file_map = {}
+
+        self.file_map_path = os.path.join(self.db_path, "file_map.json")
+        if os.path.exists(self.file_map_path):
+            with open(self.file_map_path, "r") as f:
+                self.file_map = json.load(f)
 
         self.hf_embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -31,19 +37,15 @@ class DBManager:
                 except Exception as e:
                     print(f"Failed to load FAISS vector store: {e}")
 
-    def check_if_file_updated(self,file_path, md5_hash):
+    def check_if_file_updated(self,file_path):
     # Check if the file has been updated by comparing its MD5 hash with the existing one
-        existing_md5_hash = self.get_existing_md5_hash(file_path)
-        return existing_md5_hash != md5_hash
+        file_hash = self.get_md5_hash(file_path)
+        if self.file_map.get(file_path):
+            if self.file_map.get(file_path) == file_hash:
+                return True
 
-    def get_existing_md5_hash(self,file_path):
-        # Get the existing MD5 hash of the file from the vector database
-        _db_path = os.path.join(self.db_path, os.path.basename(file_path))
-        if os.path.exists(_db_path):
-            vector_store = FAISS.load_local(_db_path, embeddings=self.hf_embeddings)
-            document = vector_store.get_document_by_id(file_path)
-            return document.md5_hash
-        return None
+        return False
+
 
     def get_md5_hash(self, file_path):
     # Calculate MD5 hash of the file
@@ -60,10 +62,9 @@ class DBManager:
             for root, _, files in os.walk(self.folder_path)
             for file in files
             if file.endswith('.pdf')
-            # and not self.check_if_file_updated(
-            #     os.path.join(root, file),
-            #     self.get_md5_hash(os.path.join(root, file))
-            # )
+            and not self.check_if_file_updated(
+                os.path.join(root, file)
+            )
         ]
 
         print("Files to be parsed")
@@ -79,8 +80,15 @@ class DBManager:
             _documents = text_splitter.split_documents(pages)
             all_documents.extend(_documents)
 
+        for _file_path_ in updated_files:
+            _file_hash = self.get_md5_hash(_file_path_)
+            self.file_map[_file_path_] = _file_hash
 
-        self.vector_store = FAISS.from_documents(all_documents, embedding=self.hf_embeddings)
+        with open(self.file_map_path, "w") as f:
+            json.dump(self.file_map, f)
+
+        if all_documents:
+            self.vector_store.add_documents(all_documents, embedding=self.hf_embeddings)
 
         return None
 
