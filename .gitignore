@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.venv/
+venv/
+env/
+.env
+dist/
+build/
+*.pyo
+
+# Node
+node_modules/
+dist/
+
+# Models — large binary files, never commit
+*.gguf
+*.bin
+llama.cpp/
+
+# Vector cache — rebuilt on startup, no need to track
+backend/vector_db_cache/*
+!backend/vector_db_cache/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/.claude/
